@@ -1,0 +1,79 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
+
+<media-gallery
+  id="MediaGallery-{{ section.id }}"
+  role="region"
+  {% if section.settings.enable_sticky_info %}class="product__column-sticky"{% endif %}
+  aria-label="{{ 'products.product.media.gallery_viewer' | t }}"
+  data-desktop-layout="{{ section.settings.gallery_layout }}"
+>
+  <div id="GalleryStatus-{{ section.id }}" class="visually-hidden" role="status"></div>
+
+  <div class="swiper mySwiper">
+    <div class="swiper-wrapper">
+      {% for media in product.media %}
+        {% if media.media_type == 'image' %}
+          <div
+            class="swiper-slide"
+            data-variant-keyword="
+              {% assign filename = media.src | split: '/' | last | downcase %}
+              {% if filename contains 'black' %}black{% elsif filename contains 'blue' %}blue{% elsif filename contains 'yellow' %}yellow{% endif %}"
+          >
+            <img
+              src="{{ media | image_url: width: 800 }}"
+              loading="lazy"
+              style="max-height: 500px; width: auto; margin: auto;"
+              alt="{{ media.alt | escape }}"
+              width="150"
+              height="150"
+            >
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-pagination"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const swiper = new Swiper(".mySwiper", {
+        slidesPerView: 1,
+        spaceBetween: 10,
+        loop: false,
+        pagination: {
+          el: ".swiper-pagination",
+          clickable: true,
+        },
+        navigation: {
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        },
+      });
+
+      const updateSlides = (keyword) => {
+        document.querySelectorAll(".swiper-slide").forEach((slide) => {
+          if (!keyword || slide.dataset.variantKeyword.includes(keyword)) {
+            slide.style.display = "block";
+          } else {
+            slide.style.display = "none";
+          }
+        });
+        swiper.update();
+      };
+
+      const variantRadios = document.querySelectorAll('[type="radio"]');
+      variantRadios.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          updateSlides(radio.value.toLowerCase());
+        });
+      });
+
+      const active = document.querySelector('[aria-checked="true"]');
+      if (active) updateSlides(active.textContent.toLowerCase());
+    });
+  </script>
+</media-gallery>
