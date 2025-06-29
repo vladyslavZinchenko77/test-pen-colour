@@ -14,11 +14,19 @@
     <div class="swiper-wrapper">
       {% for media in product.media %}
         {% if media.media_type == 'image' %}
+          {% assign filename = media.src | split: '/' | last | downcase %}
+          {% assign keyword = '' %}
+          {% if filename contains 'black' %}
+            {% assign keyword = 'black' %}
+          {% elsif filename contains 'blue' %}
+            {% assign keyword = 'blue' %}
+          {% elsif filename contains 'yellow' %}
+            {% assign keyword = 'yellow' %}
+          {% endif %}
+
           <div
             class="swiper-slide"
-            data-variant-keyword="
-              {% assign filename = media.src | split: '/' | last | downcase %}
-              {% if filename contains 'black' %}black{% elsif filename contains 'blue' %}blue{% elsif filename contains 'yellow' %}yellow{% endif %}"
+            data-variant-keyword="{{ keyword }}"
           >
             <img
               src="{{ media | image_url: width: 800 }}"
@@ -38,74 +46,76 @@
     <div class="swiper-pagination"></div>
   </div>
 
-<script>
-  window.gallerySettings = {
-    slidesPerView: {
-      desktop: {{ section.settings.slides_desktop }},
-      tablet: {{ section.settings.slides_tablet }},
-      mobile: {{ section.settings.slides_mobile }}
-    },
-    spaceBetween: {{ section.settings.space_between }},
-    pagination: {{ section.settings.enable_pagination | json }},
-    navigation: {{ section.settings.enable_navigation | json }}
-  };
-
-  document.addEventListener("DOMContentLoaded", function () {
-    const s = window.gallerySettings;
-
-    const swiper = new Swiper(".mySwiper", {
-      loop: false,
-      spaceBetween: s.spaceBetween,
-      slidesPerView: s.slidesPerView.desktop,
-
-      breakpoints: {
-        0: {
-          slidesPerView: s.slidesPerView.mobile,
-        },
-        768: {
-          slidesPerView: s.slidesPerView.tablet,
-        },
-        1024: {
-          slidesPerView: s.slidesPerView.desktop,
-        }
+  <script>
+    window.gallerySettings = {
+      slidesPerView: {
+        desktop: {{ section.settings.slides_desktop }},
+        tablet: {{ section.settings.slides_tablet }},
+        mobile: {{ section.settings.slides_mobile }}
       },
-
-      pagination: s.pagination
-        ? {
-            el: ".swiper-pagination",
-            clickable: true,
-          }
-        : false,
-
-      navigation: s.navigation
-        ? {
-            nextEl: ".swiper-button-next",
-            prevEl: ".swiper-button-prev",
-          }
-        : false,
-    });
-
-    const updateSlides = (keyword) => {
-      document.querySelectorAll(".swiper-slide").forEach((slide) => {
-        if (!keyword || slide.dataset.variantKeyword.includes(keyword)) {
-          slide.style.display = "block";
-        } else {
-          slide.style.display = "none";
-        }
-      });
-      swiper.update();
+      spaceBetween: {{ section.settings.space_between }},
+      pagination: {{ section.settings.enable_pagination | json }},
+      navigation: {{ section.settings.enable_navigation | json }}
     };
 
-    const variantRadios = document.querySelectorAll('[type="radio"]');
-    variantRadios.forEach((radio) => {
-      radio.addEventListener("change", () => {
-        updateSlides(radio.value.toLowerCase());
+    document.addEventListener("DOMContentLoaded", function () {
+      const s = window.gallerySettings;
+
+      const swiper = new Swiper(".mySwiper", {
+        loop: false,
+        spaceBetween: s.spaceBetween,
+        slidesPerView: s.slidesPerView.desktop,
+
+        breakpoints: {
+          0: { slidesPerView: s.slidesPerView.mobile },
+          768: { slidesPerView: s.slidesPerView.tablet },
+          1024: { slidesPerView: s.slidesPerView.desktop }
+        },
+
+        pagination: s.pagination
+          ? {
+              el: ".swiper-pagination",
+              clickable: true,
+            }
+          : false,
+
+        navigation: s.navigation
+          ? {
+              nextEl: ".swiper-button-next",
+              prevEl: ".swiper-button-prev",
+            }
+          : false,
       });
+
+      const updateSlides = (keyword) => {
+        document.querySelectorAll(".swiper-slide").forEach((slide) => {
+          const slideKeyword = slide.dataset.variantKeyword?.trim();
+          slide.style.display = !keyword || slideKeyword === keyword ? "block" : "none";
+        });
+        swiper.update();
+      };
+
+      const getSelectedVariantValue = () => {
+        const input = document.querySelector('input[type="radio"]:checked');
+        return input?.value?.toLowerCase() || '';
+      };
+
+      updateSlides(getSelectedVariantValue());
+
+      document.addEventListener('change', (event) => {
+        if (event.target.matches('input[type="radio"][name^="option"]')) {
+          updateSlides(event.target.value.toLowerCase());
+        }
+      });
+
+      const container = document.querySelector('[data-product-id]');
+      if (container) {
+        const observer = new MutationObserver(() => {
+          updateSlides(getSelectedVariantValue());
+        });
+
+        observer.observe(container, { childList: true, subtree: true });
+      }
     });
-
-    const active = document.querySelector('[aria-checked="true"]');
-    if (active) updateSlides(active.textContent.toLowerCase());
-  });
-</script>
-
+  </script>
 </media-gallery>
