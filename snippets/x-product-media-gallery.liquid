@@ -40,9 +40,10 @@
         {% endif %}
       {% endfor %}
     </div>
-
-    <div class="swiper-button-next"> </div>
-    <div class="swiper-button-prev"> </div>
+    {% if section.settings.enable_navigation %}
+        <div class="swiper-button-next"> </div>
+        <div class="swiper-button-prev"> </div>
+    {% endif %}
     <div class="swiper-pagination"></div>
   </div>
 
